@@ -23,6 +23,8 @@ export default function Home() {
   const [countdownMinutes, setCountdownMinutes] = useState(0);
   const [countdownSeconds, setCountdownSeconds] = useState(0);
   const [countdownTargetSeconds, setCountdownTargetSeconds] = useState(0);
+  const [completionMessage, setCompletionMessage] = useState("");
+  const [alarmPlayCount, setAlarmPlayCount] = useState(0);
 
   const fetchCategories = useCallback(async () => {
     const { data, error } = await supabase
@@ -76,15 +78,21 @@ export default function Home() {
     const audioCtx = new AudioContext();
     const oscillator = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
+    const now = audioCtx.currentTime;
 
-    oscillator.type = "sine";
-    oscillator.frequency.value = 880;
-    gain.gain.value = 0.2;
+    oscillator.type = "square";
+    oscillator.frequency.setValueAtTime(440, now);
+    oscillator.frequency.linearRampToValueAtTime(880, now + 0.6);
+
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.18, now + 0.05);
+    gain.gain.setValueAtTime(0.18, now + 0.6);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
 
     oscillator.connect(gain);
     gain.connect(audioCtx.destination);
-    oscillator.start();
-    oscillator.stop(audioCtx.currentTime + 0.4);
+    oscillator.start(now);
+    oscillator.stop(now + 1.2);
     oscillator.onended = () => audioCtx.close();
   }, []);
 
@@ -150,7 +158,11 @@ export default function Home() {
   const handleStop = useCallback(async () => {
     setIsRunning(false);
     const actualDuration = countdownTargetSeconds > 0 ? countdownTargetSeconds - seconds : seconds;
-    alert(`Hebat! Kamu sudah fokus selama ${actualDuration} detik untuk "${title}".`);
+    setCompletionMessage(
+      `Hebat! Kamu sudah fokus selama ${actualDuration} detik untuk "${title || "kegiatanmu"}". Terus semangat dan rayakan setiap kemajuan kecil!`
+    );
+    setAlarmPlayCount(1);
+    playAlarm();
 
     const { data, error } = await supabase.from("agendas").insert([
       {
@@ -170,7 +182,23 @@ export default function Home() {
 
     setSeconds(0);
     setCountdownTargetSeconds(0);
-  }, [countdownTargetSeconds, seconds, title, categoryId, fetchTrackers]);
+  }, [countdownTargetSeconds, seconds, title, categoryId, fetchTrackers, playAlarm]);
+
+  const closeCompletionModal = () => {
+    setCompletionMessage("");
+    setAlarmPlayCount(0);
+  };
+
+  useEffect(() => {
+    if (!completionMessage || alarmPlayCount === 0 || alarmPlayCount >= 7) return;
+    const timer = setTimeout(() => {
+      if (alarmPlayCount < 7) {
+        playAlarm();
+        setAlarmPlayCount((count) => count + 1);
+      }
+    }, 1400);
+    return () => clearTimeout(timer);
+  }, [completionMessage, alarmPlayCount, playAlarm]);
 
   useEffect(() => {
     if (!isRunning || countdownTargetSeconds === 0 || seconds !== 0) return;
@@ -240,6 +268,35 @@ export default function Home() {
         trackers={trackers}
         isLoadingTrackers={isLoadingTrackers}
       />
+
+      {completionMessage ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 p-4"
+          onClick={closeCompletionModal}
+        >
+          <div
+            className="w-full max-w-md overflow-hidden rounded-4xl border border-slate-700 bg-slate-900 p-6 shadow-2xl motion-safe:animate-pulse"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mb-4 text-center">
+              <div className="mt-4 flex flex-col items-center gap-3">
+                <span className="text-5xl animate-bounce">🏆</span>
+                <h3 className="text-2xl font-semibold text-white">Selamat! Kamu berhasil.</h3>
+              </div>
+            </div>
+            <p className="text-slate-200">{completionMessage}</p>
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={closeCompletionModal}
+                className="rounded-full bg-slate-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
