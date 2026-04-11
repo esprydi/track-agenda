@@ -185,6 +185,8 @@ export default function TrackerAnalytics({ categories, trackers, isLoadingTracke
     [trackersInRange, rangeType, selectedDateObject, categories]
   );
 
+  const [hoveredPointIndex, setHoveredPointIndex] = useState(null);
+
   const totalChartHours = useMemo(
     () => chartData.values.reduce((sum, value) => sum + value, 0),
     [chartData.values]
@@ -312,7 +314,11 @@ export default function TrackerAnalytics({ categories, trackers, isLoadingTracke
             <p className="mt-4 text-slate-400">Memuat grafik...</p>
           ) : (
             <div className="mt-5 overflow-x-auto">
-              <svg viewBox={`0 0 ${chartData.width} ${chartData.height}`} className="w-full max-w-full overflow-visible rounded-3xl bg-slate-950">
+              <svg
+                viewBox={`0 0 ${chartData.width} ${chartData.height}`}
+                className="w-full max-w-full overflow-visible rounded-3xl bg-slate-950"
+                onClick={() => setHoveredPointIndex(null)}
+              >
                 <defs>
                   <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.35" />
@@ -352,9 +358,53 @@ export default function TrackerAnalytics({ categories, trackers, isLoadingTracke
                 {chartData.pointsString.split(" ").map((point, index) => {
                   const [x, y] = point.split(",").map(Number);
                   return (
-                    <circle key={`${x}-${y}-${index}`} cx={x} cy={y} r="4" fill="#38bdf8" />
+                    <circle
+                      key={`${x}-${y}-${index}`}
+                      cx={x}
+                      cy={y}
+                      r="4"
+                      fill="#38bdf8"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setHoveredPointIndex((current) => (current === index ? null : index));
+                      }}
+                      tabIndex={0}
+                    />
                   );
                 })}
+
+                {hoveredPointIndex !== null ? (() => {
+                  const [x, y] = chartData.pointsString
+                    .split(" ")[hoveredPointIndex]
+                    .split(",")
+                    .map(Number);
+                  const label = chartData.labels[hoveredPointIndex] || "-";
+                  const value = chartData.values[hoveredPointIndex] || 0;
+                  const formattedValue = `${value.toFixed(2)} jam`;
+                  const tooltipX = Math.min(Math.max(x + 10, chartData.padding), chartData.width - chartData.padding - 120);
+                  const tooltipY = Math.max(y - 30, chartData.padding);
+
+                  return (
+                    <g>
+                      <circle cx={x} cy={y} r="6" fill="#7dd3fc" opacity="0.55" />
+                      <rect
+                        x={tooltipX}
+                        y={tooltipY}
+                        width="120"
+                        height="42"
+                        rx="10"
+                        fill="#0f172a"
+                        opacity="0.95"
+                      />
+                      <text x={tooltipX + 10} y={tooltipY + 18} fill="#f8fafc" fontSize="12" fontWeight="600">
+                        {label}
+                      </text>
+                      <text x={tooltipX + 10} y={tooltipY + 34} fill="#cbd5e1" fontSize="11">
+                        {formattedValue}
+                      </text>
+                    </g>
+                  );
+                })() : null}
               </svg>
 
               <div className="mt-4 grid grid-cols-3 gap-2 text-[11px] text-slate-400 sm:grid-cols-6">
