@@ -123,8 +123,9 @@ export default function Home() {
             <span aria-hidden="true">⏱️</span>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Track Agenda</p>
+            <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Jejak Waktu</p>
             <h1 className="text-2xl font-semibold text-slate-100">Time Tracker</h1>
+            <p className="mt-1 text-sm text-slate-400">Catat fokus, pantau durasi, dan jaga produktivitas setiap hari.</p>
           </div>
         </div>
 
