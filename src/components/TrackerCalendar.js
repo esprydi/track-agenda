@@ -129,12 +129,22 @@ export default function TrackerCalendar({ categories, trackers, isLoadingTracker
             <h2 className="text-2xl font-bold">Kalender Tracker</h2>
             <p className="mt-2 text-slate-400">Lihat catatan tracker yang sudah selesai per tanggal.</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handlePrevMonth}
               className="rounded-full border border-slate-700 bg-slate-950 px-4 py-2 text-sm text-slate-100 transition hover:bg-slate-900"
             >
               Sebelumnya
+            </button>
+            <button
+              onClick={() => {
+                const today = new Date();
+                setCurrentMonth(new Date(today.getFullYear(), today.getMonth(), 1));
+                setSelectedDateKey(formatDateKey(today));
+              }}
+              className="rounded-full border border-slate-700 bg-blue-600 px-4 py-2 text-sm text-white transition hover:bg-blue-500"
+            >
+              Hari ini
             </button>
             <button
               onClick={handleNextMonth}

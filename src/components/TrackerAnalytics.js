@@ -168,8 +168,8 @@ export default function TrackerAnalytics({ categories, trackers, isLoadingTracke
   }, [rangeType, selectedDateObject]);
 
   const trackersInRange = useMemo(() => {
-    const startTime = rangeStart.setHours(0, 0, 0, 0);
-    const endTime = rangeEnd.setHours(23, 59, 59, 999);
+    const startTime = new Date(rangeStart).setHours(0, 0, 0, 0);
+    const endTime = new Date(rangeEnd).setHours(23, 59, 59, 999);
     return trackers.filter((tracker) => {
       if (!tracker.created_at) return false;
       const trackerTime = new Date(tracker.created_at).getTime();
@@ -220,7 +220,7 @@ export default function TrackerAnalytics({ categories, trackers, isLoadingTracke
 
   const summaryItems = useMemo(() => {
     return Object.entries(categorySummary).map(([categoryId, seconds]) => {
-      const category = categories.find((category) => category.id === categoryId);
+      const category = categories.find((category) => String(category.id) === String(categoryId));
       return {
         id: categoryId,
         name: category?.name || "Tanpa Kategori",
