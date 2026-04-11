@@ -18,6 +18,11 @@ export default function Home() {
   const [trackers, setTrackers] = useState([]);
   const [isLoadingTrackers, setIsLoadingTrackers] = useState(true);
   const [trackersError, setTrackersError] = useState("");
+  const [isCustomTimer, setIsCustomTimer] = useState(false);
+  const [countdownHours, setCountdownHours] = useState(0);
+  const [countdownMinutes, setCountdownMinutes] = useState(0);
+  const [countdownSeconds, setCountdownSeconds] = useState(0);
+  const [countdownTargetSeconds, setCountdownTargetSeconds] = useState(0);
 
   const fetchCategories = useCallback(async () => {
     const { data, error } = await supabase
@@ -63,15 +68,47 @@ export default function Home() {
     Promise.resolve().then(fetchTrackers);
   }, [fetchTrackers]);
 
+  const playAlarm = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+
+    const audioCtx = new AudioContext();
+    const oscillator = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    oscillator.type = "sine";
+    oscillator.frequency.value = 880;
+    gain.gain.value = 0.2;
+
+    oscillator.connect(gain);
+    gain.connect(audioCtx.destination);
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + 0.4);
+    oscillator.onended = () => audioCtx.close();
+  }, []);
+
   useEffect(() => {
     let interval;
     if (isRunning) {
       interval = setInterval(() => {
-        setSeconds((prev) => prev + 1);
+        setSeconds((prev) =>
+          countdownTargetSeconds > 0 ? Math.max(prev - 1, 0) : prev + 1
+        );
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isRunning]);
+  }, [isRunning, countdownTargetSeconds]);
+
+  const toggleCustomTimer = useCallback((value) => {
+    setIsCustomTimer(value);
+    if (!value) {
+      setCountdownHours(0);
+      setCountdownMinutes(0);
+      setCountdownSeconds(0);
+      setCountdownTargetSeconds(0);
+    }
+  }, []);
 
   const handleStart = () => {
     if (isLoadingCategories) {
@@ -89,17 +126,36 @@ export default function Home() {
       return;
     }
 
+    const normalizedHours = Math.max(0, Math.floor(countdownHours));
+    const normalizedMinutes = Math.max(0, Math.floor(countdownMinutes));
+    const normalizedSeconds = Math.min(
+      59,
+      Math.max(0, Math.floor(countdownSeconds))
+    );
+    const targetSeconds = isCustomTimer
+      ? normalizedHours * 3600 + normalizedMinutes * 60 + normalizedSeconds
+      : 0;
+
+    if (targetSeconds > 0) {
+      setSeconds(targetSeconds);
+      setCountdownTargetSeconds(targetSeconds);
+    } else {
+      setSeconds(0);
+      setCountdownTargetSeconds(0);
+    }
+
     setIsRunning(true);
   };
 
-  const handleStop = async () => {
+  const handleStop = useCallback(async () => {
     setIsRunning(false);
-    alert(`Hebat! Kamu sudah fokus selama ${seconds} detik untuk "${title}".`);
+    const actualDuration = countdownTargetSeconds > 0 ? countdownTargetSeconds - seconds : seconds;
+    alert(`Hebat! Kamu sudah fokus selama ${actualDuration} detik untuk "${title}".`);
 
     const { data, error } = await supabase.from("agendas").insert([
       {
         title: title,
-        actual_duration_sec: seconds,
+        actual_duration_sec: actualDuration,
         status: "completed",
         category_id: categoryId,
       },
@@ -113,7 +169,17 @@ export default function Home() {
     }
 
     setSeconds(0);
-  };
+    setCountdownTargetSeconds(0);
+  }, [countdownTargetSeconds, seconds, title, categoryId, fetchTrackers]);
+
+  useEffect(() => {
+    if (!isRunning || countdownTargetSeconds === 0 || seconds !== 0) return;
+    const timer = setTimeout(() => {
+      playAlarm();
+      handleStop();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [seconds, isRunning, countdownTargetSeconds, playAlarm, handleStop]);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-slate-900 text-white p-10">
@@ -151,6 +217,15 @@ export default function Home() {
         onStart={handleStart}
         onStop={handleStop}
         seconds={seconds}
+        isCustomTimer={isCustomTimer}
+        toggleCustomTimer={toggleCustomTimer}
+        countdownHours={countdownHours}
+        setCountdownHours={setCountdownHours}
+        countdownMinutes={countdownMinutes}
+        setCountdownMinutes={setCountdownMinutes}
+        countdownSeconds={countdownSeconds}
+        setCountdownSeconds={setCountdownSeconds}
+        countdownTargetSeconds={countdownTargetSeconds}
       />
 
       <TrackerCalendar
