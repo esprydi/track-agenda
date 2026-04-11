@@ -188,6 +188,22 @@ export default function TrackerAnalytics({ categories, trackers, isLoadingTracke
   );
 
   const [hoveredPointIndex, setHoveredPointIndex] = useState(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+
+  const closeCategoryModal = () => {
+    setSelectedCategoryId(null);
+  };
+
+  const selectedCategoryDetails = useMemo(() => {
+    if (!selectedCategoryId) return null;
+    const category = categories.find((category) => String(category.id) === String(selectedCategoryId));
+    const items = trackersInRange.filter((tracker) => String(tracker.category_id) === String(selectedCategoryId));
+    return {
+      category,
+      items,
+      totalSeconds: items.reduce((sum, tracker) => sum + (tracker.actual_duration_sec || 0), 0),
+    };
+  }, [selectedCategoryId, trackersInRange, categories]);
 
   const totalChartHours = useMemo(
     () => chartData.values.reduce((sum, value) => sum + value, 0),
@@ -282,7 +298,14 @@ export default function TrackerAnalytics({ categories, trackers, isLoadingTracke
             ) : (
               <div className="mt-4 space-y-3">
                 {summaryItems.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between gap-4 rounded-3xl border border-slate-800 bg-slate-900 p-4">
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setSelectedCategoryId((current) => (current === item.id ? null : item.id))}
+                    className={`w-full text-left transition ${
+                      selectedCategoryId === item.id ? "border-blue-500 bg-slate-800" : "border-slate-800 bg-slate-900 hover:bg-slate-800"
+                    } flex items-center justify-between gap-4 rounded-3xl border p-4`}
+                  >
                     <div className="flex items-center gap-3">
                       <span
                         className="inline-block h-3.5 w-3.5 rounded-full"
@@ -294,12 +317,54 @@ export default function TrackerAnalytics({ categories, trackers, isLoadingTracke
                       </div>
                     </div>
                     <p className="text-sm text-slate-300">{((item.seconds / totalSeconds) * 100 || 0).toFixed(0)}%</p>
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
           </div>
         </div>
+
+        {selectedCategoryDetails ? (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 p-4"
+            onClick={closeCategoryModal}
+          >
+            <div
+              className="w-full max-w-2xl overflow-hidden rounded-4xl border border-slate-700 bg-slate-900 p-6 shadow-2xl"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="mb-4 flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm text-blue-200">Detail Kategori</p>
+                  <h4 className="text-2xl font-semibold text-white">{selectedCategoryDetails.category?.name || "Tanpa Kategori"}</h4>
+                  <p className="text-sm text-slate-400">Total durasi: {formatDuration(selectedCategoryDetails.totalSeconds)}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeCategoryModal}
+                  className="rounded-full bg-slate-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+                >
+                  Tutup
+                </button>
+              </div>
+              <div className="space-y-3">
+                {selectedCategoryDetails.items.length === 0 ? (
+                  <p className="text-slate-400">Tidak ada entry untuk kategori ini dalam interval.</p>
+                ) : (
+                  selectedCategoryDetails.items.map((tracker) => (
+                    <div key={tracker.id || `${tracker.category_id}-${tracker.created_at}`} className="rounded-3xl border border-slate-800 bg-slate-950 p-4">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="font-semibold text-white">{tracker.title || "Tanpa judul"}</p>
+                        <p className="text-sm text-slate-400">{new Date(tracker.created_at).toLocaleString("id-ID")}</p>
+                      </div>
+                      <p className="mt-2 text-sm text-slate-300">Durasi: {formatDuration(tracker.actual_duration_sec || 0)}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         <div className="mt-6 rounded-3xl border border-slate-700 bg-slate-950 p-5">
           <div className="flex items-center justify-between gap-4">

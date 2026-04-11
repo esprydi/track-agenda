@@ -21,6 +21,7 @@ const getCategoryColor = (categories, categoryId) =>
 
 export default function TrackerCalendar({ categories, trackers, isLoadingTrackers, trackersError }) {
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
+  const [selectedDateKey, setSelectedDateKey] = useState(null);
 
   const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
   const monthDays = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
@@ -36,6 +37,16 @@ export default function TrackerCalendar({ categories, trackers, isLoadingTracker
       return acc;
     }, {});
   }, [trackers]);
+
+  const selectedDateDetails = useMemo(() => {
+    if (!selectedDateKey) return null;
+    const items = trackersByDate[selectedDateKey] || [];
+    return {
+      date: selectedDateKey ? new Date(selectedDateKey) : null,
+      items,
+      totalSeconds: items.reduce((sum, tracker) => sum + (tracker.actual_duration_sec || 0), 0),
+    };
+  }, [selectedDateKey, trackersByDate]);
 
   const calendarCells = useMemo(() => {
     const totalCells = Math.ceil((startDayIndex + monthDays) / 7) * 7;
@@ -55,6 +66,10 @@ export default function TrackerCalendar({ categories, trackers, isLoadingTracker
 
   const handleNextMonth = () => {
     setCurrentMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
+
+  const closeDetailModal = () => {
+    setSelectedDateKey(null);
   };
 
   return (
@@ -115,13 +130,18 @@ export default function TrackerCalendar({ categories, trackers, isLoadingTracker
               const dayKey = formatDateKey(cell.date);
               const cellTrackers = cell.isValid ? trackersByDate[dayKey] || [] : [];
               const isToday = cell.isValid && dayKey === formatDateKey(new Date());
+              const isSelected = cell.isValid && selectedDateKey === dayKey;
 
               return (
-                <div
+                <button
                   key={index}
-                  className={`min-h-30 overflow-hidden rounded-3xl border p-3 text-left ${
-                    cell.isValid ? "border-slate-700 bg-slate-900" : "border-transparent bg-slate-950/70 text-slate-500"
-                  }`}
+                  type="button"
+                  onClick={() => cell.isValid && setSelectedDateKey(cell.isValid ? dayKey : null)}
+                  className={`min-h-30 overflow-hidden rounded-3xl border p-3 text-left transition ${
+                    cell.isValid
+                      ? `${isSelected ? "border-blue-500 bg-slate-800" : "border-slate-700 bg-slate-900 hover:bg-slate-800"}`
+                      : "border-transparent bg-slate-950/70 text-slate-500"
+                  } ${cell.isValid ? "cursor-pointer" : "cursor-default"}`}
                 >
                   {cell.isValid ? (
                     <>
@@ -152,7 +172,7 @@ export default function TrackerCalendar({ categories, trackers, isLoadingTracker
                                   />
                                   <p className="font-semibold text-slate-100 truncate">{tracker.title}</p>
                                 </div>
-                                <p className="text-slate-400">{formatDuration(tracker.actual_duration_sec)} selesai</p>
+                                <p className="text-slate-400">{formatDuration(tracker.actual_duration_sec)}</p>
                               </li>
                             );
                           })}
@@ -160,10 +180,71 @@ export default function TrackerCalendar({ categories, trackers, isLoadingTracker
                       )}
                     </>
                   ) : null}
-                </div>
+                </button>
               );
             })}
           </div>
+
+          {selectedDateDetails ? (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 p-4"
+              onClick={closeDetailModal}
+            >
+              <div
+                className="w-full max-w-2xl overflow-hidden rounded-4xl border border-slate-700 bg-slate-900 p-6 shadow-2xl"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="mb-4 flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm text-blue-200">Detail Tanggal</p>
+                    <h4 className="text-2xl font-semibold text-white">
+                      {selectedDateDetails.date.toLocaleDateString("id-ID", {
+                        weekday: "long",
+                        day: "2-digit",
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </h4>
+                    <p className="text-sm text-slate-400">Total durasi: {formatDuration(selectedDateDetails.totalSeconds)}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closeDetailModal}
+                    className="rounded-full bg-slate-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+                  >
+                    Tutup
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {selectedDateDetails.items.length === 0 ? (
+                    <p className="text-slate-400">Tidak ada tracker untuk tanggal ini.</p>
+                  ) : (
+                    selectedDateDetails.items.map((tracker) => {
+                      const trackerColor = getCategoryColor(categories, tracker.category_id);
+                      return (
+                        <div
+                          key={tracker.id || `${tracker.category_id}-${tracker.created_at}`}
+                          className="rounded-3xl border border-slate-800 bg-slate-950 p-4"
+                        >
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="inline-block h-2.5 w-2.5 rounded-full"
+                                style={{ backgroundColor: trackerColor }}
+                              />
+                              <p className="font-semibold text-white">{tracker.title || "Tanpa judul"}</p>
+                            </div>
+                            <p className="text-sm text-slate-400">{formatDuration(tracker.actual_duration_sec)}</p>
+                          </div>
+                          <p className="mt-2 text-sm text-slate-400">{new Date(tracker.created_at).toLocaleTimeString("id-ID")}</p>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
