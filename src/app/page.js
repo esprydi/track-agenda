@@ -7,6 +7,31 @@ import TrackerForm from "../components/TrackerForm";
 import TrackerCalendar from "../components/TrackerCalendar";
 import TrackerAnalytics from "../components/TrackerAnalytics";
 
+const formatDurationForMessage = (seconds) => {
+  if (seconds < 60) {
+    return `${seconds} detik`;
+  }
+
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = seconds % 60;
+
+  if (hours > 0) {
+    const hourPart = `${hours} jam`;
+    const minutePart = minutes > 0 ? ` ${minutes} menit` : "";
+    const secondPart = remainingSeconds > 0 ? ` ${remainingSeconds} detik` : "";
+    return `${hourPart}${minutePart}${secondPart}`;
+  }
+
+  if (minutes > 0) {
+    const minutePart = `${minutes} menit`;
+    const secondPart = remainingSeconds > 0 ? ` ${remainingSeconds} detik` : "";
+    return `${minutePart}${secondPart}`;
+  }
+
+  return `${seconds} detik`;
+};
+
 export default function Home() {
   const [seconds, setSeconds] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
@@ -171,7 +196,7 @@ export default function Home() {
     setStartTimestamp(null);
     const actualDuration = countdownTargetSeconds > 0 ? countdownTargetSeconds - seconds : seconds;
     setCompletionMessage(
-      `Hebat! Kamu sudah fokus selama ${actualDuration} detik untuk "${title || "kegiatanmu"}". Terus semangat dan rayakan setiap kemajuan kecil!`
+      `Hebat! Kamu sudah fokus selama ${formatDurationForMessage(actualDuration)} untuk "${title || "kegiatanmu"}". Terus semangat dan rayakan setiap kemajuan kecil!`
     );
     setAlarmPlayCount(1);
     playAlarm();
