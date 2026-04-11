@@ -1,4 +1,5 @@
 "use client";  // Wajib ada karena kita pakai tombol dan interaksi
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase.js";
 
@@ -137,12 +138,17 @@ export default function Home() {
           {formatTime(seconds)}
         </div>
 
-        <div className="flex gap-4 justify-center">
-          {!isRunning ? (
-            <button onClick={handleStart} className="bg-green-600 hover:bg-green-500 px-8 py-3 rounded-full font-bold transition">PLAY</button>
-          ) : (
-            <button onClick={handleStop} className="bg-red-600 hover:bg-red-500 px-8 py-3 rounded-full font-bold transition">STOP</button>
-          )}
+        <div className="flex flex-col items-center gap-4">
+          <div className="flex gap-4 justify-center">
+            {!isRunning ? (
+              <button onClick={handleStart} className="bg-green-600 hover:bg-green-500 px-8 py-3 rounded-full font-bold transition">PLAY</button>
+            ) : (
+              <button onClick={handleStop} className="bg-red-600 hover:bg-red-500 px-8 py-3 rounded-full font-bold transition">STOP</button>
+            )}
+          </div>
+          <Link href="/categories" className="text-sm text-slate-300 hover:text-white">
+            Manage Category
+          </Link>
         </div>
       </div>
     </main>
