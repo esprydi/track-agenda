@@ -45,7 +45,7 @@ export default function TrackerForm({
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         className="bg-transparent border-b border-slate-600 mb-4 text-center text-xl focus:outline-none focus:border-blue-500"
-        placeholder="Judul task..."
+        placeholder="Masukkan Kegiatanmu..."
       />
 
       <div className="mb-4 text-left">

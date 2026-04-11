@@ -10,7 +10,7 @@ import TrackerAnalytics from "../components/TrackerAnalytics";
 export default function Home() {
   const [seconds, setSeconds] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
-  const [title, setTitle] = useState("Belajar Coding");
+  const [title, setTitle] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [categories, setCategories] = useState([]);
   const [categoriesError, setCategoriesError] = useState("");
