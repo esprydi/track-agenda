@@ -19,6 +19,9 @@ export default function Home() {
   const getCategoryLabel = (category) =>
     category.name ?? category.title ?? category.category ?? category.label ?? category.id;
 
+  const getCategoryColor = (categoryId) =>
+    categories.find((category) => category.id === categoryId)?.color_code || "#3b82f6";
+
   const formatDateKey = (date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -83,7 +86,7 @@ export default function Home() {
     const fetchCategories = async () => {
       const { data, error } = await supabase
         .from("categories")
-        .select("id,name")
+        .select("id,name,color_code")
         .order("name", { ascending: true });
 
       if (error) {
@@ -297,12 +300,25 @@ export default function Home() {
                           <p className="text-xs text-slate-500">Tidak ada tracker</p>
                         ) : (
                           <ul className="space-y-2">
-                            {cellTrackers.map((tracker) => (
-                              <li key={tracker.id} className="rounded-2xl border border-slate-700 bg-slate-950 p-2 text-xs">
-                                <p className="font-semibold text-slate-100 truncate">{tracker.title}</p>
-                                <p className="text-slate-400">{formatDuration(tracker.actual_duration_sec)} selesai</p>
-                              </li>
-                            ))}
+                            {cellTrackers.map((tracker) => {
+                              const trackerColor = getCategoryColor(tracker.category_id);
+                              return (
+                                <li
+                                  key={tracker.id}
+                                  className="rounded-2xl border bg-slate-950 p-2 text-xs"
+                                  style={{ borderColor: trackerColor }}
+                                >
+                                  <div className="mb-2 flex items-center gap-2">
+                                    <span
+                                      className="inline-block h-2.5 w-2.5 rounded-full"
+                                      style={{ backgroundColor: trackerColor }}
+                                    />
+                                    <p className="font-semibold text-slate-100 truncate">{tracker.title}</p>
+                                  </div>
+                                  <p className="text-slate-400">{formatDuration(tracker.actual_duration_sec)} selesai</p>
+                                </li>
+                              );
+                            })}
                           </ul>
                         )}
                       </>
