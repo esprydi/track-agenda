@@ -79,9 +79,6 @@ export default function TrackerForm({
             </button>
           )}
         </div>
-        <Link href="/categories" className="text-sm text-slate-300 hover:text-white">
-          Manage Category
-        </Link>
       </div>
     </div>
   );

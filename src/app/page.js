@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { supabase } from "../lib/supabase.js";
 import TrackerForm from "../components/TrackerForm";
 import TrackerCalendar from "../components/TrackerCalendar";
@@ -116,7 +117,26 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-slate-900 text-white p-10">
-      <h1 className="text-3xl font-bold mb-8">Track Agenda ⏱️</h1>
+      <div className="mb-6 flex w-full max-w-4xl flex-col gap-3 rounded-3xl border border-slate-700 bg-slate-950 p-4 shadow-lg sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-900 text-xl">
+            <span aria-hidden="true">⏱️</span>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Track Agenda</p>
+            <h1 className="text-2xl font-semibold text-slate-100">Time Tracker</h1>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-start gap-2 sm:items-end sm:flex-row sm:gap-3">
+          <Link
+            href="/categories"
+            className="rounded-full bg-slate-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+          >
+            Manage Category
+          </Link>
+        </div>
+      </div>
 
       <TrackerForm
         title={title}
