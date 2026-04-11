@@ -10,6 +10,7 @@ import TrackerAnalytics from "../components/TrackerAnalytics";
 export default function Home() {
   const [seconds, setSeconds] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
+  const [startTimestamp, setStartTimestamp] = useState(null);
   const [title, setTitle] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [categories, setCategories] = useState([]);
@@ -97,16 +98,25 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    let interval;
-    if (isRunning) {
-      interval = setInterval(() => {
-        setSeconds((prev) =>
-          countdownTargetSeconds > 0 ? Math.max(prev - 1, 0) : prev + 1
-        );
-      }, 1000);
-    }
+    if (!isRunning || startTimestamp === null) return undefined;
+
+    const updateTimer = () => {
+      const now = Date.now();
+      const elapsedSeconds = Math.floor((now - startTimestamp) / 1000);
+      if (countdownTargetSeconds > 0) {
+        setSeconds((prev) => {
+          const remaining = Math.max(countdownTargetSeconds - elapsedSeconds, 0);
+          return remaining;
+        });
+      } else {
+        setSeconds(elapsedSeconds);
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 500);
     return () => clearInterval(interval);
-  }, [isRunning, countdownTargetSeconds]);
+  }, [isRunning, startTimestamp, countdownTargetSeconds]);
 
   const toggleCustomTimer = useCallback((value) => {
     setIsCustomTimer(value);
@@ -152,11 +162,13 @@ export default function Home() {
       setCountdownTargetSeconds(0);
     }
 
+    setStartTimestamp(Date.now());
     setIsRunning(true);
   };
 
   const handleStop = useCallback(async () => {
     setIsRunning(false);
+    setStartTimestamp(null);
     const actualDuration = countdownTargetSeconds > 0 ? countdownTargetSeconds - seconds : seconds;
     setCompletionMessage(
       `Hebat! Kamu sudah fokus selama ${actualDuration} detik untuk "${title || "kegiatanmu"}". Terus semangat dan rayakan setiap kemajuan kecil!`
