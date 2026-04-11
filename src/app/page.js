@@ -261,6 +261,7 @@ export default function Home() {
         trackers={trackers}
         isLoadingTrackers={isLoadingTrackers}
         trackersError={trackersError}
+        refreshTrackers={fetchTrackers}
       />
 
       <TrackerAnalytics

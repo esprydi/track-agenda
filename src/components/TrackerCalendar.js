@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { supabase } from "../lib/supabase.js";
 
 const formatDateKey = (date) => {
   const year = date.getFullYear();
@@ -19,9 +20,15 @@ const formatDuration = (seconds) => {
 const getCategoryColor = (categories, categoryId) =>
   categories.find((category) => category.id === categoryId)?.color_code || "#3b82f6";
 
-export default function TrackerCalendar({ categories, trackers, isLoadingTrackers, trackersError }) {
+export default function TrackerCalendar({ categories, trackers, isLoadingTrackers, trackersError, refreshTrackers }) {
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
   const [selectedDateKey, setSelectedDateKey] = useState(null);
+  const [editingTrackerId, setEditingTrackerId] = useState(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editHours, setEditHours] = useState(0);
+  const [editMinutes, setEditMinutes] = useState(0);
+  const [editSeconds, setEditSeconds] = useState(0);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
   const monthDays = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
@@ -68,8 +75,50 @@ export default function TrackerCalendar({ categories, trackers, isLoadingTracker
     setCurrentMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
   };
 
+  const openEditTracker = (tracker) => {
+    setEditingTrackerId(tracker.id);
+    setEditTitle(tracker.title || "");
+    const duration = tracker.actual_duration_sec || 0;
+    setEditHours(Math.floor(duration / 3600));
+    setEditMinutes(Math.floor((duration % 3600) / 60));
+    setEditSeconds(duration % 60);
+  };
+
+  const handleSaveTrackerEdit = async () => {
+    if (!editingTrackerId) return;
+    setIsSavingEdit(true);
+    const updatedSeconds = Math.max(0, editHours * 3600 + editMinutes * 60 + editSeconds);
+    const { error } = await supabase
+      .from("agendas")
+      .update({ title: editTitle, actual_duration_sec: updatedSeconds })
+      .eq("id", editingTrackerId);
+    if (error) {
+      console.error("Error updating tracker:", error);
+    }
+    await refreshTrackers?.();
+    setIsSavingEdit(false);
+    setEditingTrackerId(null);
+  };
+
+  const handleDeleteTracker = async (tracker) => {
+    if (!tracker.id) return;
+    if (!window.confirm("Hapus tracker ini dari kalender?")) return;
+    const { error } = await supabase.from("agendas").delete().eq("id", tracker.id);
+    if (error) {
+      console.error("Error deleting tracker:", error);
+      return;
+    }
+    await refreshTrackers?.();
+    setSelectedDateKey((current) => current);
+  };
+
+  const cancelEdit = () => {
+    setEditingTrackerId(null);
+  };
+
   const closeDetailModal = () => {
     setSelectedDateKey(null);
+    setEditingTrackerId(null);
   };
 
   return (
@@ -220,22 +269,107 @@ export default function TrackerCalendar({ categories, trackers, isLoadingTracker
                   ) : (
                     selectedDateDetails.items.map((tracker) => {
                       const trackerColor = getCategoryColor(categories, tracker.category_id);
+                      const isEditing = editingTrackerId === tracker.id;
                       return (
                         <div
                           key={tracker.id || `${tracker.category_id}-${tracker.created_at}`}
                           className="rounded-3xl border border-slate-800 bg-slate-950 p-4"
                         >
-                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className="inline-block h-2.5 w-2.5 rounded-full"
-                                style={{ backgroundColor: trackerColor }}
-                              />
-                              <p className="font-semibold text-white">{tracker.title || "Tanpa judul"}</p>
+                          {isEditing ? (
+                            <div className="space-y-3">
+                              <div>
+                                <label className="block text-sm text-slate-400">Judul</label>
+                                <input
+                                  value={editTitle}
+                                  onChange={(e) => setEditTitle(e.target.value)}
+                                  className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-900 px-3 py-2 text-white outline-none"
+                                />
+                              </div>
+                              <div className="grid grid-cols-3 gap-2">
+                                <div>
+                                  <label className="block text-sm text-slate-400">Jam</label>
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    value={editHours}
+                                    onChange={(e) => setEditHours(Math.max(0, Number(e.target.value) || 0))}
+                                    className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-900 px-3 py-2 text-white outline-none"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm text-slate-400">Menit</label>
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    max={59}
+                                    value={editMinutes}
+                                    onChange={(e) => setEditMinutes(Math.min(59, Math.max(0, Number(e.target.value) || 0)))}
+                                    className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-900 px-3 py-2 text-white outline-none"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm text-slate-400">Detik</label>
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    max={59}
+                                    value={editSeconds}
+                                    onChange={(e) => setEditSeconds(Math.min(59, Math.max(0, Number(e.target.value) || 0)))}
+                                    className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-900 px-3 py-2 text-white outline-none"
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={cancelEdit}
+                                  className="rounded-full bg-slate-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-600"
+                                >
+                                  Batal
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={handleSaveTrackerEdit}
+                                  disabled={isSavingEdit}
+                                  className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:opacity-60"
+                                >
+                                  {isSavingEdit ? "Menyimpan..." : "Simpan"}
+                                </button>
+                              </div>
                             </div>
-                            <p className="text-sm text-slate-400">{formatDuration(tracker.actual_duration_sec)}</p>
-                          </div>
-                          <p className="mt-2 text-sm text-slate-400">{new Date(tracker.created_at).toLocaleTimeString("id-ID")}</p>
+                          ) : (
+                            <>
+                              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className="inline-block h-2.5 w-2.5 rounded-full"
+                                    style={{ backgroundColor: trackerColor }}
+                                  />
+                                  <p className="font-semibold text-white">{tracker.title || "Tanpa judul"}</p>
+                                </div>
+                                <p className="text-sm text-slate-400">{formatDuration(tracker.actual_duration_sec)}</p>
+                              </div>
+                              <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <p className="text-sm text-slate-400">{new Date(tracker.created_at).toLocaleTimeString("id-ID")}</p>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => openEditTracker(tracker)}
+                                    className="rounded-full bg-slate-700 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-600"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteTracker(tracker)}
+                                    className="rounded-full bg-red-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-500"
+                                  >
+                                    Hapus
+                                  </button>
+                                </div>
+                              </div>
+                            </>
+                          )}
                         </div>
                       );
                     })
