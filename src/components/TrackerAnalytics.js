@@ -146,9 +146,17 @@ const buildChartData = (trackers, rangeType, selectedDateObject, categories) => 
   };
 };
 
+const getTodayDateString = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 export default function TrackerAnalytics({ categories, trackers, isLoadingTrackers }) {
   const [rangeType, setRangeType] = useState("date");
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [selectedDate, setSelectedDate] = useState(getTodayDateString);
 
   const selectedDateObject = useMemo(() => new Date(selectedDate), [selectedDate]);
 
@@ -248,7 +256,7 @@ export default function TrackerAnalytics({ categories, trackers, isLoadingTracke
           </div>
           <div className="flex flex-wrap gap-2">
             {[
-              { value: "date", label: "Tanggal" },
+              { value: "date", label: "Hari ini" },
               { value: "week", label: "Minggu" },
               { value: "month", label: "Bulan" },
               { value: "year", label: "Tahun" },
@@ -256,7 +264,12 @@ export default function TrackerAnalytics({ categories, trackers, isLoadingTracke
               <button
                 key={option.value}
                 type="button"
-                onClick={() => setRangeType(option.value)}
+                onClick={() => {
+                  setRangeType(option.value);
+                  if (option.value === "date") {
+                    setSelectedDate(getTodayDateString());
+                  }
+                }}
                 className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                   rangeType === option.value
                     ? "bg-blue-600 text-white"
