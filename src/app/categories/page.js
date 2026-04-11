@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase.js";
 
@@ -12,7 +12,7 @@ export default function ManageCategories() {
   const [colorCode, setColorCode] = useState("#3b82f6");
   const [isSaving, setIsSaving] = useState(false);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     setIsLoading(true);
     const { data, error } = await supabase
       .from("categories")
@@ -27,11 +27,11 @@ export default function ManageCategories() {
       setError("");
     }
     setIsLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    Promise.resolve().then(fetchCategories);
+  }, [fetchCategories]);
 
   const handleAddCategory = async (event) => {
     event.preventDefault();
