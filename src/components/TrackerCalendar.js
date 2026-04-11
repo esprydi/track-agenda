@@ -214,7 +214,7 @@ export default function TrackerCalendar({ categories, trackers, isLoadingTracker
                     Tutup
                   </button>
                 </div>
-                <div className="space-y-3">
+                <div className="max-h-[60vh] space-y-3 overflow-y-auto pr-1">
                   {selectedDateDetails.items.length === 0 ? (
                     <p className="text-slate-400">Tidak ada tracker untuk tanggal ini.</p>
                   ) : (

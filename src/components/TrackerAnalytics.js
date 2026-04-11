@@ -347,7 +347,7 @@ export default function TrackerAnalytics({ categories, trackers, isLoadingTracke
                   Tutup
                 </button>
               </div>
-              <div className="space-y-3">
+              <div className="max-h-[60vh] space-y-3 overflow-y-auto pr-1">
                 {selectedCategoryDetails.items.length === 0 ? (
                   <p className="text-slate-400">Tidak ada entry untuk kategori ini dalam interval.</p>
                 ) : (
