@@ -393,10 +393,11 @@ export default function TrackerAnalytics({ categories, trackers, isLoadingTracke
           {isLoadingTrackers ? (
             <p className="mt-4 text-slate-400">Memuat grafik...</p>
           ) : (
-            <div className="mt-5 overflow-x-auto">
+            <div className="mt-5 overflow-x-auto rounded-3xl bg-slate-950 p-4">
               <svg
                 viewBox={`0 0 ${chartData.width} ${chartData.height}`}
-                className="w-full max-w-full overflow-visible rounded-3xl bg-slate-950"
+                className="w-full min-w-md h-auto overflow-visible"
+                preserveAspectRatio="none"
                 onClick={() => setHoveredPointIndex(null)}
               >
                 <defs>
@@ -487,12 +488,14 @@ export default function TrackerAnalytics({ categories, trackers, isLoadingTracke
                 })() : null}
               </svg>
 
-              <div className="mt-4 grid grid-cols-3 gap-2 text-[11px] text-slate-400 sm:grid-cols-6">
-                {chartData.labels.map((label, index) =>
-                  index % Math.max(1, Math.floor(chartData.labels.length / 6)) === 0 ? (
-                    <span key={label + index}>{label}</span>
-                  ) : null
-                )}
+              <div className="mt-4 overflow-x-auto">
+                <div className="min-w-md grid grid-cols-3 gap-2 text-[11px] text-slate-400 sm:grid-cols-6">
+                  {chartData.labels.map((label, index) =>
+                    index % Math.max(1, Math.floor(chartData.labels.length / 6)) === 0 ? (
+                      <span key={label + index}>{label}</span>
+                    ) : null
+                  )}
+                </div>
               </div>
             </div>
           )}

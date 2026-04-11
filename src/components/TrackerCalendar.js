@@ -176,16 +176,17 @@ export default function TrackerCalendar({ categories, trackers, isLoadingTracker
             <p className="rounded-2xl bg-red-950/50 p-3 text-sm text-red-300">{trackersError}</p>
           ) : null}
 
-          <div className="grid grid-cols-7 gap-2 text-center text-xs uppercase tracking-wide text-slate-500">
-            {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map((label) => (
-              <div key={label} className="py-2">
-                {label}
-              </div>
-            ))}
-          </div>
+          <div className="overflow-x-auto rounded-3xl bg-slate-950 p-2">
+            <div className="min-w-md grid grid-cols-7 gap-2 text-center text-xs uppercase tracking-wide text-slate-500">
+              {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map((label) => (
+                <div key={label} className="py-2">
+                  {label}
+                </div>
+              ))}
+            </div>
 
-          <div className="grid grid-cols-7 gap-2">
-            {calendarCells.map((cell, index) => {
+            <div className="min-w-md grid grid-cols-7 gap-2">
+              {calendarCells.map((cell, index) => {
               const dayKey = formatDateKey(cell.date);
               const cellTrackers = cell.isValid ? trackersByDate[dayKey] || [] : [];
               const isToday = cell.isValid && dayKey === formatDateKey(new Date());
@@ -196,7 +197,7 @@ export default function TrackerCalendar({ categories, trackers, isLoadingTracker
                   key={index}
                   type="button"
                   onClick={() => cell.isValid && setSelectedDateKey(cell.isValid ? dayKey : null)}
-                  className={`min-h-30 overflow-hidden rounded-3xl border p-3 text-left transition ${
+                  className={`min-h-28 overflow-hidden rounded-3xl border p-3 text-left transition ${
                     cell.isValid
                       ? `${isSelected ? "border-blue-500 bg-slate-800" : "border-slate-700 bg-slate-900 hover:bg-slate-800"}`
                       : "border-transparent bg-slate-950/70 text-slate-500"
@@ -242,6 +243,7 @@ export default function TrackerCalendar({ categories, trackers, isLoadingTracker
               );
             })}
           </div>
+        </div>
 
           {selectedDateDetails ? (
             <div
