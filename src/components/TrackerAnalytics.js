@@ -5,7 +5,9 @@ import { useMemo, useState } from "react";
 const formatDuration = (seconds) => {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
-  return `${hours}j ${minutes}m`;
+  const secs = seconds % 60;
+  const formattedSeconds = secs ? ` ${secs}s` : "";
+  return `${hours}j ${minutes}m${formattedSeconds}`;
 };
 
 const formatDateString = (date) =>
