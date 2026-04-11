@@ -489,10 +489,15 @@ export default function TrackerAnalytics({ categories, trackers, isLoadingTracke
               </svg>
 
               <div className="mt-4 overflow-x-auto">
-                <div className="min-w-md grid grid-cols-3 gap-2 text-[11px] text-slate-400 sm:grid-cols-6">
+                <div className="min-w-md grid grid-cols-3 gap-2 text-slate-400 sm:grid-cols-6">
                   {chartData.labels.map((label, index) =>
                     index % Math.max(1, Math.floor(chartData.labels.length / 6)) === 0 ? (
-                      <span key={label + index}>{label}</span>
+                      <span
+                        key={label + index}
+                        className="inline-block text-[10px] leading-none sm:text-[11px] sm:leading-tight sm:rotate-0 -rotate-45 origin-bottom-left"
+                      >
+                        {label}
+                      </span>
                     ) : null
                   )}
                 </div>
