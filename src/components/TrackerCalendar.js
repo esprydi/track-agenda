@@ -172,7 +172,6 @@ export default function TrackerCalendar({ categories, trackers, isLoadingTracker
                                   />
                                   <p className="font-semibold text-slate-100 truncate">{tracker.title}</p>
                                 </div>
-                                <p className="text-slate-400">{formatDuration(tracker.actual_duration_sec)}</p>
                               </li>
                             );
                           })}
