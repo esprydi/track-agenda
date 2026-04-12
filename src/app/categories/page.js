@@ -10,7 +10,11 @@ export default function ManageCategories() {
   const [error, setError] = useState("");
   const [name, setName] = useState("");
   const [colorCode, setColorCode] = useState("#3b82f6");
+  const [editingCategoryId, setEditingCategoryId] = useState(null);
+  const [editName, setEditName] = useState("");
+  const [editColorCode, setEditColorCode] = useState("#3b82f6");
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditSaving, setIsEditSaving] = useState(false);
 
   const fetchCategories = useCallback(async () => {
     setIsLoading(true);
@@ -70,8 +74,55 @@ export default function ManageCategories() {
       setError(error.message || "Gagal menghapus kategori.");
     } else {
       setError("");
+      if (editingCategoryId === categoryId) {
+        handleCancelEdit();
+      }
       fetchCategories();
     }
+  };
+
+  const handleStartEdit = (category) => {
+    setEditingCategoryId(category.id);
+    setEditName(category.name || "");
+    setEditColorCode(category.color_code || "#3b82f6");
+    setError("");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCategoryId(null);
+    setEditName("");
+    setEditColorCode("#3b82f6");
+    setError("");
+  };
+
+  const handleSaveEdit = async (event) => {
+    event.preventDefault();
+
+    if (!editName.trim()) {
+      setError("Nama kategori tidak boleh kosong.");
+      return;
+    }
+
+    if (!editingCategoryId) return;
+
+    setIsEditSaving(true);
+    const { error } = await supabase
+      .from("categories")
+      .update({
+        name: editName.trim(),
+        color_code: editColorCode || "#3b82f6",
+      })
+      .eq("id", editingCategoryId);
+
+    if (error) {
+      console.error("Error updating category:", error);
+      setError(error.message || "Gagal memperbarui kategori.");
+    } else {
+      setError("");
+      handleCancelEdit();
+      fetchCategories();
+    }
+    setIsEditSaving(false);
   };
 
   return (
@@ -81,7 +132,7 @@ export default function ManageCategories() {
           <div>
             <h1 className="text-3xl font-bold">Manage Category</h1>
             <p className="mt-2 text-slate-400">
-              Tambahkan atau hapus kategori yang akan dipakai pada time tracker.
+              Tambahkan, edit, atau hapus kategori yang akan dipakai pada time tracker.
             </p>
           </div>
           <Link href="/" className="rounded-full bg-slate-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700">
@@ -148,24 +199,73 @@ export default function ManageCategories() {
               {categories.map((category) => (
                 <li
                   key={category.id}
-                  className="flex items-center justify-between gap-4 rounded-3xl border border-slate-800 bg-slate-950 p-4"
+                  className="space-y-3 rounded-3xl border border-slate-800 bg-slate-950 p-4"
                 >
-                  <div className="flex items-center gap-3">
-                    <span
-                      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-700"
-                      style={{ backgroundColor: category.color_code || "#3b82f6" }}
-                    />
-                    <div>
-                      <p className="font-semibold">{category.name}</p>
-                      <p className="text-sm text-slate-500">{category.id}</p>
+                  {editingCategoryId === category.id ? (
+                    <form onSubmit={handleSaveEdit} className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="block">
+                          <span className="text-sm text-slate-300">Nama Kategori</span>
+                          <input
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-blue-500"
+                          />
+                        </label>
+                        <label className="block">
+                          <span className="text-sm text-slate-300">Warna Kategori</span>
+                          <input
+                            type="color"
+                            value={editColorCode}
+                            onChange={(e) => setEditColorCode(e.target.value)}
+                            className="mt-2 h-12 w-full cursor-pointer rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3"
+                          />
+                        </label>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3 sm:justify-end">
+                        <button
+                          type="button"
+                          onClick={handleCancelEdit}
+                          className="rounded-full border border-slate-700 bg-slate-800 px-4 py-2 text-sm text-slate-100 transition hover:bg-slate-700"
+                        >
+                          Batal
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={isEditSaving}
+                          className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {isEditSaving ? "Menyimpan..." : "Simpan"}
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <span
+                          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-700"
+                          style={{ backgroundColor: category.color_code || "#3b82f6" }}
+                        />
+                        <div>
+                          <p className="font-semibold">{category.name}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleStartEdit(category)}
+                          className="rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-500"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCategory(category.id)}
+                          className="rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-500"
+                        >
+                          Hapus
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  <button
-                    onClick={() => handleDeleteCategory(category.id)}
-                    className="rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-500"
-                  >
-                    Hapus
-                  </button>
+                  )}
                 </li>
               ))}
             </ul>
